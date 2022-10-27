@@ -8,13 +8,11 @@ type token_type =
 
 type location = {
   line: int;
-  column: int;
+  spam: int*int;
 }
 [@@deriving show]
 
 let add_line no location = {location with line = location.line + no}
-
-let add_column no location = {location with column = location.column + no}
 
 let keywords_map = [
   ("lambda", Lambda);

@@ -9,7 +9,7 @@ type scanner = {
 }
 
 let make_scanner source =
-  {source; tokens = []; start = 0; current = 0; location = {line = 1; column = 1}}
+  {source; tokens = []; start = 0; current = 0; location = {line = 1; spam = (0, 0)}}
 
 let is_at_end scanner = scanner.current >= String.length scanner.source
 
@@ -29,21 +29,24 @@ let add_token token_type scanner =
 let next_line no scanner =
   {scanner with location = add_line no scanner.location}
 
-let next_column no scanner =
-  {scanner with location = add_column no scanner.location}
+let up_spam scanner =
+  {scanner with location = {scanner.location with spam = (scanner.start, scanner.current)}}
 
-let is_blank c =
-  match c with
-  | ' ' | '\r' | '\t' | '\n' | '\000' -> true
-  | _ -> false
+let isalpha c = 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z'
+let isdigit c = '0' <= c && c <= '9'
+
+let is_valid c =
+     isalpha c
+  || c = '_' || c = '\''
+  || isdigit c
 
 let rec identifier scanner =
   let c = peak scanner in
-  if is_blank c then
+  if not (is_valid c) then
     let lexeme = get_lexeme scanner in
     match List.assoc_opt lexeme keywords_map with
-    | Some t -> add_token t scanner
-    | None -> add_token Identifier scanner
+    | Some t -> add_token t (up_spam scanner)
+    | None -> add_token Identifier (up_spam scanner)
   else
     scanner |> advance |> identifier
 
@@ -51,9 +54,9 @@ let scan_token scanner =
   let c = peak scanner in
   let scanner = advance scanner in
   match c with
-  | '(' -> add_token LeftParen (next_column 1 scanner)
-  | ')' -> add_token RightParen (next_column 1 scanner)
-  | ' ' | '\t' | '\r' -> next_column 1 scanner
+  | '(' -> add_token LeftParen (up_spam scanner)
+  | ')' -> add_token RightParen (up_spam scanner)
+  | ' ' | '\t' | '\r' -> up_spam scanner
   | '\n' -> next_line 1 scanner
   | _ -> identifier scanner
 
