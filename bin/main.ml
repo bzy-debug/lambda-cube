@@ -1,5 +1,4 @@
-open Lambda_cube.Scanner
-open Lambda_cube.Token
+open Lambda_cube
 
 let read_all_strings filename =
   let file = open_in filename in
@@ -7,9 +6,11 @@ let read_all_strings filename =
   s
 
 let run code =
-  let scanner = make_scanner code in
-  let tokens = scan_tokens scanner in
-  List.iter (fun t -> t |> show_token |> print_endline) tokens
+  let scanner = Scanner.make_scanner code in
+  let tokens = Scanner.scan_tokens scanner in
+  let state: Parser.state = {tokens = Array.of_list tokens; cur = 0} in
+  let expr = Parser.parse_exp state in
+  expr |> Ast.show_exp |> print_endline
 
 let run_file filename =
   read_all_strings filename |> run
